@@ -1,0 +1,32 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListObservabilityBuckets",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::retail-mimir-blocks-454143665149",
+        "arn:aws:s3:::retail-mimir-ruler-454143665149",
+        "arn:aws:s3:::retail-tempo-traces-454143665149"
+      ]
+    },
+    {
+      "Sid": "ReadWriteObservabilityObjects",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::retail-mimir-blocks-454143665149/*",
+        "arn:aws:s3:::retail-mimir-ruler-454143665149/*",
+        "arn:aws:s3:::retail-tempo-traces-454143665149/*"
+      ]
+    }
+  ]
+}

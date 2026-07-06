@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-traces-long
+  namespace: monitoring
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: telemetrygen
+          image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - traces
+            - --otlp-insecure
+            - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+            - --service=retail-demo
+            - --rate=10
+            - --duration=5m

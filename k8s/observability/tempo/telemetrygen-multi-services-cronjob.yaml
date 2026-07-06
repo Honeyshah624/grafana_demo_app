@@ -1,0 +1,138 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-retail-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=retail-demo
+                - --traces=50
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-cart-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=cart-service
+                - --traces=50
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-payment-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=payment-service
+                - --traces=50
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-order-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=order-service
+                - --traces=50
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-inventory-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=inventory-service
+                - --traces=50

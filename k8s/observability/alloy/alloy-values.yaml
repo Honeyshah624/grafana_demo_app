@@ -1,107 +1,129 @@
+image:
+  registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+  repository: observability/alloy
+  tag: latest
+  pullPolicy: IfNotPresent
+
+controller:
+  type: daemonset
+
 serviceAccount:
   create: true
-  name: mimir
+  name: alloy
 
-gateway:
-  enabled: true
-  replicas: 1
+rbac:
+  create: true
 
-minio:
-  enabled: true
-  replicas: 1
-  persistence:
-    enabled: false
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+alloy:
+  configMap:
+    create: true
+    content: |-
+      prometheus.remote_write "mimir" {
+        endpoint {
+          url = "http://mimir-gateway.monitoring.svc.cluster.local/api/v1/push"
+        }
+      }
 
-kafka:
-  enabled: false
+      prometheus.scrape "kube_state_metrics" {
+        targets = [{
+          __address__ = "kube-state-metrics.monitoring.svc.cluster.local:8080",
+          job = "kube-state-metrics",
+        }]
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
 
-alertmanager:
-  enabled: false
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
 
-ruler:
-  enabled: false
+      discovery.relabel "pod_metrics" {
+        targets = discovery.kubernetes.pods.targets
 
-ingester:
-  replicas: 1
-  zoneAwareReplication:
-    enabled: false
-  persistentVolume:
-    enabled: false
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 768Mi
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+          regex         = "true"
+          action        = "keep"
+        }
 
-store_gateway:
-  replicas: 1
-  zoneAwareReplication:
-    enabled: false
-  persistentVolume:
-    enabled: false
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+          regex         = "(.+)"
+          target_label  = "__metrics_path__"
+        }
 
-compactor:
-  replicas: 1
-  persistentVolume:
-    enabled: false
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+          regex         = "([^:]+)(?::\\d+)?;(\\d+)"
+          replacement   = "$1:$2"
+          target_label  = "__address__"
+        }
 
-distributor:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
 
-querier:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
 
-query_frontend:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
 
-query_scheduler:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
 
-overrides_exporter:
-  replicas: 1
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          target_label  = "app"
+        }
+      }
 
-rollout_operator:
-  enabled: true
+      prometheus.scrape "pod_metrics" {
+        targets    = discovery.relabel.pod_metrics.output
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
+
+      discovery.kubernetes "nodes" {
+        role = "node"
+      }
+
+      discovery.relabel "cadvisor" {
+        targets = discovery.kubernetes.nodes.targets
+
+        rule {
+          target_label = "__address__"
+          replacement  = "kubernetes.default.svc.cluster.local:443"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_node_name"]
+          regex         = "(.+)"
+          target_label  = "__metrics_path__"
+          replacement   = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
+        }
+      }
+
+      prometheus.scrape "cadvisor" {
+        targets           = discovery.relabel.cadvisor.output
+        scheme            = "https"
+        bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+        tls_config {
+          insecure_skip_verify = true
+        }
+
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi

@@ -1,6 +1,21 @@
+image:
+  repository: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/mimir
+  tag: latest
+  pullPolicy: IfNotPresent
+
 serviceAccount:
-  create: false
+  create: true
   name: mimir
+  
+
+gateway:
+  enabled: true
+  replicas: 1
+  nginx:
+    image:
+      registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+      repository: observability/nginx-unprivileged
+      tag: 1.29-alpine
 
 minio:
   enabled: false
@@ -8,34 +23,70 @@ minio:
 kafka:
   enabled: false
 
+alertmanager:
+  enabled: false
+
+ruler:
+  enabled: false
+
+chunks-cache:
+  enabled: false
+
+index-cache:
+  enabled: false
+
+metadata-cache:
+  enabled: false
+
+results-cache:
+  enabled: false
+
+rollout_operator:
+  enabled: false
+
+metaMonitoring:
+  grafanaAgent:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
 mimir:
   structuredConfig:
     ingest_storage:
       enabled: false
 
     ingester:
-      push_grpc_method_enabled: true
       ring:
         replication_factor: 1
+      push_grpc_method_enabled: true
+
+    
+    store_gateway:
+      sharding_ring:
+        replication_factor: 1
+    common:
+      storage:
+        backend: s3
+        s3:
+          bucket_name: retail-mimir-blocks-454143665149
+          endpoint: s3.ap-south-1.amazonaws.com
+          region: ap-south-1
 
     blocks_storage:
       backend: s3
       s3:
-        bucket_name: retail-mimir-blocks
+        bucket_name: retail-mimir-blocks-454143665149
         endpoint: s3.ap-south-1.amazonaws.com
         region: ap-south-1
+      tsdb:
+        dir: /data/tsdb
+      bucket_store:
+        sync_dir: /data/tsdb-sync
 
     ruler_storage:
       backend: s3
       s3:
-        bucket_name: retail-mimir-ruler
-        endpoint: s3.ap-south-1.amazonaws.com
-        region: ap-south-1
-
-    alertmanager_storage:
-      backend: s3
-      s3:
-        bucket_name: retail-mimir-alertmanager
+        bucket_name: retail-mimir-ruler-454143665149
         endpoint: s3.ap-south-1.amazonaws.com
         region: ap-south-1
 
@@ -53,33 +104,22 @@ store_gateway:
   persistentVolume:
     enabled: false
 
-querier:
+compactor:
+  replicas: 1
+  persistentVolume:
+    enabled: false
+
+distributor:
   replicas: 1
 
-query_scheduler:
+querier:
   replicas: 1
 
 query_frontend:
   replicas: 1
 
-distributor:
+query_scheduler:
   replicas: 1
-
-ruler:
-  replicas: 1
-
-alertmanager:
-  replicas: 1
-  persistentVolume:
-    enabled: false
-
-compactor:
-  persistentVolume:
-    enabled: false
 
 overrides_exporter:
-  replicas: 1
-
-gateway:
-  enabled: true
   replicas: 1

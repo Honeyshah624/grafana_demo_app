@@ -1,0 +1,14 @@
+image:
+  registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+  repository: observability/kube-state-metrics
+  tag: v2.17.0
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

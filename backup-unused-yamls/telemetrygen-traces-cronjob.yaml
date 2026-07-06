@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telemetrygen-traces-cron
+  namespace: monitoring
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: telemetrygen
+              image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/observability/telemetrygen:v0.129.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - traces
+                - --otlp-insecure
+                - --otlp-endpoint=tempo.monitoring.svc.cluster.local:4317
+                - --service=retail-demo
+                - --traces=100

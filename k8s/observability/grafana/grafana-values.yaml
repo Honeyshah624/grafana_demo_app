@@ -1,3 +1,15 @@
+image:
+  registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+  repository: observability/grafana
+  tag: latest
+  pullPolicy: IfNotPresent
+
+testFramework:
+  enabled: false
+
+initChownData:
+  enabled: false
+
 adminUser: admin
 adminPassword: admin123
 
@@ -8,30 +20,68 @@ service:
 persistence:
   enabled: false
 
-readinessProbe:
-  httpGet:
-    path: /api/health
-    port: 3000
-  initialDelaySeconds: 60
-  timeoutSeconds: 5
-  periodSeconds: 10
-  failureThreshold: 10
-
-livenessProbe:
-  httpGet:
-    path: /api/health
-    port: 3000
-  initialDelaySeconds: 120
-  timeoutSeconds: 5
-  periodSeconds: 10
-  failureThreshold: 10
+envValueFrom:
+  ES_PASSWORD:
+    secretKeyRef:
+      name: retail-logs-es-elastic-user
+      key: elastic
 
 datasources:
   datasources.yaml:
     apiVersion: 1
+    prune: true
     datasources:
       - name: Mimir
+        uid: mimir
         type: prometheus
         access: proxy
         url: http://mimir-gateway.monitoring.svc.cluster.local/prometheus
         isDefault: true
+
+      - name: Elasticsearch Logs
+        uid: elastic-logs
+        type: elasticsearch
+        access: proxy
+        url: https://retail-logs-es-http.logging.svc.cluster.local:9200
+        basicAuth: true
+        basicAuthUser: elastic
+        jsonData:
+          index: "[fluentbit-]YYYY.MM.DD"
+          interval: Daily
+          timeField: "@timestamp"
+          tlsSkipVerify: true
+          logMessageField: log
+          logLevelField: level
+        secureJsonData:
+          basicAuthPassword: $ES_PASSWORD
+
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: elastic-logs
+            spanStartTimeShift: "-15m"
+            spanEndTimeShift: "15m"
+            filterByTraceID: false
+            filterBySpanID: false
+          tracesToMetrics:
+            datasourceUid: mimir
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: Observability
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboardsConfigMaps:
+  default: grafana-dashboards
