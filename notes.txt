@@ -1,0 +1,51 @@
+                         EKS Cluster
+                            |
+        ------------------------------------------------
+        |                                              |
+ Application Namespace: default             Monitoring / Logging Namespace
+        |                                              |
+ Retail Store Sample App                              |
+ ui, catalog, carts, checkout, orders                 |
+        |                                              |
+        |---------------- Metrics Flow ----------------|
+        |                                              |
+        v                                              |
+ App Metrics + Pod Metrics                            |
+ kube-state-metrics                      |
+        |                                              |
+        v                                              |
+ Grafana Alloy                                        |
+        |                                              |
+        | Remote Write                                 |
+        v                                              |
+ Mimir Gateway                                        |
+        |                                              |
+        v                                              |
+ Grafana Mimir                                        |
+        |                                              |
+        | Stores long-term metrics                     |
+        v                                              |
+ AWS S3 Buckets                                       |
+ retail-mimir-blocks                                  |
+ retail-mimir-ruler                                   |
+ retail-mimir-alertmanager                            |
+        |                                              |
+        v                                              |
+ Grafana Dashboard                                    |
+ App Health, CPU, Memory, Network                     |
+
+
+        |---------------- Logs Flow -------------------|
+        |
+        v
+ Application Logs
+        |
+        v
+ Fluent Bit
+        |
+        v
+ ElasticSearch
+        |
+        v
+ Kibana  Dashboards
+ Application Logs Dashboard

@@ -1,0 +1,85 @@
+serviceAccount:
+  create: false
+  name: mimir
+
+minio:
+  enabled: false
+
+kafka:
+  enabled: false
+
+mimir:
+  structuredConfig:
+    ingest_storage:
+      enabled: false
+
+    ingester:
+      push_grpc_method_enabled: true
+      ring:
+        replication_factor: 1
+
+    blocks_storage:
+      backend: s3
+      s3:
+        bucket_name: retail-mimir-blocks
+        endpoint: s3.ap-south-1.amazonaws.com
+        region: ap-south-1
+
+    ruler_storage:
+      backend: s3
+      s3:
+        bucket_name: retail-mimir-ruler
+        endpoint: s3.ap-south-1.amazonaws.com
+        region: ap-south-1
+
+    alertmanager_storage:
+      backend: s3
+      s3:
+        bucket_name: retail-mimir-alertmanager
+        endpoint: s3.ap-south-1.amazonaws.com
+        region: ap-south-1
+
+ingester:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: false
+
+store_gateway:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: false
+
+querier:
+  replicas: 1
+
+query_scheduler:
+  replicas: 1
+
+query_frontend:
+  replicas: 1
+
+distributor:
+  replicas: 1
+
+ruler:
+  replicas: 1
+
+alertmanager:
+  replicas: 1
+  persistentVolume:
+    enabled: false
+
+compactor:
+  persistentVolume:
+    enabled: false
+
+overrides_exporter:
+  replicas: 1
+
+gateway:
+  enabled: true
+  replicas: 1

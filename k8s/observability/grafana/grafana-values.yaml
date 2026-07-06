@@ -1,0 +1,37 @@
+adminUser: admin
+adminPassword: admin123
+
+service:
+  type: ClusterIP
+  port: 80
+
+persistence:
+  enabled: false
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 60
+  timeoutSeconds: 5
+  periodSeconds: 10
+  failureThreshold: 10
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 120
+  timeoutSeconds: 5
+  periodSeconds: 10
+  failureThreshold: 10
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Mimir
+        type: prometheus
+        access: proxy
+        url: http://mimir-gateway.monitoring.svc.cluster.local/prometheus
+        isDefault: true
