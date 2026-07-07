@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: retail-ui
+  namespace: application
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: retail-ui
+  template:
+    metadata:
+      labels:
+        app: retail-ui
+    spec:
+      containers:
+        - name: retail-ui
+          image: 454143665149.dkr.ecr.ap-south-1.amazonaws.com/retail-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: retail-ui
+  namespace: application
+spec:
+  type: ClusterIP
+  selector:
+    app: retail-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

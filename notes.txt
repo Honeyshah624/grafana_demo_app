@@ -1,51 +1,61 @@
-                         EKS Cluster
-                            |
-        ------------------------------------------------
-        |                                              |
- Application Namespace: default             Monitoring / Logging Namespace
-        |                                              |
- Retail Store Sample App                              |
- ui, catalog, carts, checkout, orders                 |
-        |                                              |
-        |---------------- Metrics Flow ----------------|
-        |                                              |
-        v                                              |
- App Metrics + Pod Metrics                            |
- kube-state-metrics                      |
-        |                                              |
-        v                                              |
- Grafana Alloy                                        |
-        |                                              |
-        | Remote Write                                 |
-        v                                              |
- Mimir Gateway                                        |
-        |                                              |
-        v                                              |
- Grafana Mimir                                        |
-        |                                              |
-        | Stores long-term metrics                     |
-        v                                              |
- AWS S3 Buckets                                       |
- retail-mimir-blocks                                  |
- retail-mimir-ruler                                   |
- retail-mimir-alertmanager                            |
-        |                                              |
-        v                                              |
- Grafana Dashboard                                    |
- App Health, CPU, Memory, Network                     |
+Application Pods / Kubernetes Components
+        |
+        |---------------- Metrics ----------------|
+        |                                        |
+        v                                        |
+   Alloy DaemonSet                               |
+   - Scrapes kube-state-metrics                  |
+   - Scrapes kubelet/cAdvisor                    |
+   - Scrapes Tempo metrics                       |
+        |                                        |
+        v                                        |
+   Grafana Mimir                                 |
+   - Stores metrics                              |
+   - Uses S3 backend                             |
+        |                                        |
+        v                                        |
+   Grafana Metrics Dashboard                     |
+   - Pod health                                  |
+   - CPU / Memory                                |
+   - Network                                    |
+   - Node health                                |
+   - Mimir / Tempo metrics                      |
 
 
-        |---------------- Logs Flow -------------------|
+Application Pods / System Pods
+        |
+        |---------------- Logs -------------------|
         |
         v
- Application Logs
+   Fluent Bit DaemonSet
+   - Collects container logs from nodes
+   - Adds Kubernetes metadata
         |
         v
- Fluent Bit
+   Elasticsearch
+   - Stores logs as fluentbit-* indices
         |
         v
- ElasticSearch
+   Grafana Logs Dashboard
+   - All log messages
+   - Monitoring logs
+   - Logging stack logs
+   - Error logs
+   - Service-wise logs
+
+
+Application / Telemetrygen / OpenTelemetry
+        |
+        |---------------- Traces -----------------|
         |
         v
- Kibana  Dashboards
- Application Logs Dashboard
+   Tempo
+   - Receives OTLP traces on 4317 / 4318
+   - Stores traces in S3
+        |
+        v
+   Grafana Traces Dashboard
+   - Recent traces
+   - Service-wise traces
+   - Slow traces
+   - Error traces

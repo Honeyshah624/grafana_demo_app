@@ -1,15 +1,3 @@
-image:
-  registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
-  repository: observability/grafana
-  tag: latest
-  pullPolicy: IfNotPresent
-
-testFramework:
-  enabled: false
-
-initChownData:
-  enabled: false
-
 adminUser: admin
 adminPassword: admin123
 
@@ -29,7 +17,6 @@ envValueFrom:
 datasources:
   datasources.yaml:
     apiVersion: 1
-    prune: true
     datasources:
       - name: Mimir
         uid: mimir
@@ -37,51 +24,67 @@ datasources:
         access: proxy
         url: http://mimir-gateway.monitoring.svc.cluster.local/prometheus
         isDefault: true
-
-      - name: Elasticsearch Logs
-        uid: elastic-logs
-        type: elasticsearch
-        access: proxy
-        url: https://retail-logs-es-http.logging.svc.cluster.local:9200
-        basicAuth: true
-        basicAuthUser: elastic
-        jsonData:
-          index: "[fluentbit-]YYYY.MM.DD"
-          interval: Daily
-          timeField: "@timestamp"
-          tlsSkipVerify: true
-          logMessageField: log
-          logLevelField: level
-        secureJsonData:
-          basicAuthPassword: $ES_PASSWORD
+        editable: true
 
       - name: Tempo
         uid: tempo
         type: tempo
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200
-        jsonData:
-          tracesToLogsV2:
-            datasourceUid: elastic-logs
-            spanStartTimeShift: "-15m"
-            spanEndTimeShift: "15m"
-            filterByTraceID: false
-            filterBySpanID: false
-          tracesToMetrics:
-            datasourceUid: mimir
-
-dashboardProviders:
-  dashboardproviders.yaml:
-    apiVersion: 1
-    providers:
-      - name: default
-        orgId: 1
-        folder: Observability
-        type: file
-        disableDeletion: false
         editable: true
-        options:
-          path: /var/lib/grafana/dashboards/default
 
-dashboardsConfigMaps:
-  default: grafana-dashboards
+      - name: Elasticsearch Logs
+        uid: elasticsearch-logs
+        type: elasticsearch
+        access: proxy
+        url: https://retail-logs-es-http.logging.svc:9200
+        database: "[fluentbit-]YYYY.MM.DD"
+        basicAuth: true
+        basicAuthUser: elastic
+        editable: true
+        jsonData:
+          esVersion: "8.0.0"
+          timeField: "@timestamp"
+          interval: Daily
+          tlsSkipVerify: true
+          logMessageField: message
+          logLevelField: level
+        secureJsonData:
+          basicAuthPassword: $__env{ES_PASSWORD}
+
+image:
+  registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+  repository: observability/grafana
+  tag: latest
+  pullPolicy: IfNotPresent
+
+sidecar:
+  image:
+    registry: 454143665149.dkr.ecr.ap-south-1.amazonaws.com
+    repository: observability/k8s-sidecar
+    tag: 1.30.10
+    sha: ""
+
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    searchNamespace: monitoring
+    folder: /tmp/dashboards
+    folderAnnotation: grafana_folder
+    provider:
+      enabled: true
+      name: observability
+      orgid: 1
+      folder: Observability
+      type: file
+      disableDelete: false
+      allowUiUpdates: true
+      foldersFromFilesStructure: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
